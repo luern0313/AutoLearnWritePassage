@@ -184,8 +184,3 @@ while 1:
     elif choose == '调试':
         while True:
             print(ran(input(), random.random()))
-# print(text)
-# with open("test.txt", "wt") as out_file:
-#	out_file.write("该文本会写入到文件中\n看到我了吧！")
-
-# Read a file
