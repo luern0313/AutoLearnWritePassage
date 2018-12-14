@@ -31,7 +31,7 @@ PUNCTUATION = ['，', '。', '？', '！', '：', '；']
 # 拿到之前学习过的数据
 def learned():
     try:
-        with open("z知识库.txt", "rt") as zishi_file:
+        with open("z知识库.txt", "rt", encoding='utf-8') as zishi_file:
             zishi = eval(zishi_file.read())
             return zishi
     except IOError:
@@ -43,16 +43,17 @@ def learned():
 
 # 储存学习数据
 def write():
-    with open("z知识库.txt", "wt") as out_file:
+    with open("z知识库.txt", "wt", encoding='utf-8') as out_file:
         out_file.write(str(zishi))
 
 
 # 遍历整个文章的学习
 def learns():
-    i = -1
+    i = 0
     while i < len(textarray) - 2:
-        i = i + 1
+        learn(textarray[i] + ' ' + textarray[i + 1], textarray[i + 2])
         learn(textarray[i], textarray[i + 1])
+        i = i + 1
 
 
 # 单个的词语学习
@@ -83,7 +84,7 @@ def screen(text):
     textarray = jieba.cut(text)  # 分词
     textarray = '[~]'.join(textarray).split('[~]')  # 分词出来的数组好像不是标准的数组。。用这个方法转换成标准的数组
     ii = -1
-    while ii < len(textarray) - 1:  # 预学习，主要处理空行，空格
+    while ii < len(textarray) - 2:  # 预学习，主要处理空行，空格
         ii = ii + 1
         textarray[ii].lower()
         textarray[ii] = textarray[ii].strip()
@@ -95,45 +96,61 @@ def screen(text):
                 ii = ii + 1
         elif textarray[ii] in PUNCTUATION:
             learn(textarray[ii - 1] + textarray[ii], textarray[ii + 1])
+            learn(textarray[ii], textarray[ii + 1])
             ii = ii + 1
     return textarray
 
 
 # 根据现有词语和随机数得到下一个词语
-def ran(w, r):
+def ran(w, w2, r):
     zikey = zishi.keys()
-    if w in zikey:
-        zishikey = zishi[w].keys()
+    if w2 != '' and (w + ' ' + w2) in zikey:
+        print("有！！！")
+        zishikey = zishi[w + ' ' + w2].keys()
         for i in zishikey:
             if i != '$':
-                if r < float(zishi[w][i]):
-                    print(i)
+                if r < float(zishi[w + ' ' + w2][i]):
                     if i == '\n':
                         return ''
                     else:
                         return i
                 else:
-                    r = r - float(zishi[w][i])
-                    print(r)
+                    r = r - float(zishi[w + ' ' + w2][i])
     else:
-        return ' '
+        print('没词。。。')
+        if w in zikey:
+            zishikey = zishi[w].keys()
+            for i in zishikey:
+                if i != '$':
+                    if r < float(zishi[w][i]):
+                        if i == '\n':
+                            return ''
+                        else:
+                            return i
+                    else:
+                        r = r - float(zishi[w][i])
+        else:
+            return ' '
 
 
 # 生成文章
-def sen(a):
+def sen(a, s):
     global PUNCTUATION
     sent = []
     sent.append(a)
-    while len(sent) < 5000:  # 修改左侧数值可限定文章<词语>数
-        b = ran(sent[-1], random.random())
+    sent.append(s)
+    while len(sent) < 1500:  # 修改左侧数值可限定文章<词语>数
+        b = ran(sent[-2], sent[-1], random.random())
         if b in PUNCTUATION:  # 标点符号的检测
-            if ran(sent[-1] + b, random.random()) != ' ':
+            if ran(sent[-1] + b, '', random.random()) != ' ':
                 sent.append(b)
             else:
-                if ran(b, random.random()) != ' ':
+                if ran(b, '', random.random()) != ' ':
                     sent.append(b)
                 else:
                     break
+        elif b == '':
+            sent.append('\n')
         elif b != ' ':
             sent.append(b)
         else:
@@ -168,17 +185,16 @@ while 1:
     elif choose == '写作':
         zishi = learned()
         while 1:
-            print('钦定第一个词')
+            print('钦定第一个和第二个词')
             print('输入列表查看所有词')
             word = input()
             if word == '列表':
-                for i in zishi.keys(): print(i)
+                for i in zishi.keys():
+                    print(i)
             else:
-                if word in zishi.keys():
-                    print(' ')
-                    print(sen(word))
-                    print(' ')
-                    break
+                print(sen(word, input('第二个')))
+                print('')
+                break
     elif choose == '关闭':
         exit();
     elif choose == '调试':

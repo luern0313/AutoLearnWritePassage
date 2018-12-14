@@ -131,7 +131,7 @@ def ran(w, r):
 def sen(a):
     sent = []
     sent.append(a)
-    while len(sent) < 5000:
+    while len(sent) < 1000:
         b = ran(sent[len(sent) - 1], random.random())
         if b == '，' or b == '。' or b == '？' or b == '！':
             if ran(sent[len(sent) - 1] + b, random.random()) != ' ':
