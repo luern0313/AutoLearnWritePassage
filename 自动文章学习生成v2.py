@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 # 写文件
-import json
 import random
 import jieba
 
@@ -31,7 +30,7 @@ PUNCTUATION = ['，', '。', '？', '！', '：', '；']
 # 拿到之前学习过的数据
 def learned():
     try:
-        with open("z知识库.txt", "rt", encoding='utf-8') as zishi_file:
+        with open("zknow.txt", "rt", encoding='utf-8') as zishi_file:
             zishi = eval(zishi_file.read())
             return zishi
     except IOError:
@@ -43,7 +42,7 @@ def learned():
 
 # 储存学习数据
 def write():
-    with open("z知识库.txt", "wt", encoding='utf-8') as out_file:
+    with open("zknow.txt", "wt", encoding='utf-8') as out_file:
         out_file.write(str(zishi))
 
 
@@ -83,7 +82,7 @@ def screen(text):
     global PUNCTUATION
     textarray = jieba.cut(text)  # 分词
     textarray = '[~]'.join(textarray).split('[~]')  # 分词出来的数组好像不是标准的数组。。用这个方法转换成标准的数组
-    ii = -1
+    '''ii = -1
     while ii < len(textarray) - 2:  # 预学习，主要处理空行，空格
         ii = ii + 1
         textarray[ii].lower()
@@ -97,40 +96,40 @@ def screen(text):
         elif textarray[ii] in PUNCTUATION:
             learn(textarray[ii - 1] + textarray[ii], textarray[ii + 1])
             learn(textarray[ii], textarray[ii + 1])
-            ii = ii + 1
+            ii = ii + 1'''
     return textarray
 
 
 # 根据现有词语和随机数得到下一个词语
 def ran(w, w2, r):
     zikey = zishi.keys()
-    if w2 != '' and (w + ' ' + w2) in zikey:
-        print("有！！！")
+    # and random.random() < 0.98
+    if w != '' and (w + ' ' + w2) in zikey:
         zishikey = zishi[w + ' ' + w2].keys()
+        k = int(len(zishikey) == 2)
         for i in zishikey:
             if i != '$':
                 if r < float(zishi[w + ' ' + w2][i]):
                     if i == '\n':
-                        return ''
+                        return '', True, k
                     else:
-                        return i
+                        return i, True, k
                 else:
                     r = r - float(zishi[w + ' ' + w2][i])
     else:
-        print('没词。。。')
-        if w in zikey:
-            zishikey = zishi[w].keys()
+        if w2 in zikey:
+            zishikey = zishi[w2].keys()
             for i in zishikey:
                 if i != '$':
-                    if r < float(zishi[w][i]):
+                    if r < float(zishi[w2][i]):
                         if i == '\n':
-                            return ''
+                            return '', False, -1
                         else:
-                            return i
+                            return i, False, -1
                     else:
-                        r = r - float(zishi[w][i])
+                        r = r - float(zishi[w2][i])
         else:
-            return ' '
+            return '~', False, -1
 
 
 # 生成文章
@@ -139,23 +138,25 @@ def sen(a, s):
     sent = []
     sent.append(a)
     sent.append(s)
-    while len(sent) < 1500:  # 修改左侧数值可限定文章<词语>数
-        b = ran(sent[-2], sent[-1], random.random())
-        if b in PUNCTUATION:  # 标点符号的检测
-            if ran(sent[-1] + b, '', random.random()) != ' ':
-                sent.append(b)
-            else:
-                if ran(b, '', random.random()) != ' ':
-                    sent.append(b)
-                else:
-                    break
-        elif b == '':
+    fin = ''
+    double = doublet = kk = kkt = 0
+    while len(sent) < 10000:  # 修改左侧数值可限定文章<词语>数
+        b, d, k = ran(sent[-2], sent[-1], random.random())
+        double += d
+        doublet += 1
+        if k != -1:
+            kk += k
+            kkt += 1
+        if b == '':
             sent.append('\n')
-        elif b != ' ':
-            sent.append(b)
+        elif b != '~':
+            if not ((b in PUNCTUATION) and (sent[-1] in PUNCTUATION)):
+                # if b != sent[-1]:
+                    sent.append(b)
         else:
+            fin = sent[-2] + '，' + sent[-1]
             break
-    return ''.join(sent)
+    return ''.join(sent), fin, double, doublet, kk, kkt
 
 
 while 1:
@@ -174,7 +175,7 @@ while 1:
         finally:
             if text == 0:
                 input('未发现')
-                exit();
+                exit()
             zishi = learned()  # 可以继续学习
             textarray = screen(text)
             print(textarray)
@@ -184,7 +185,7 @@ while 1:
             write()
     elif choose == '写作':
         zishi = learned()
-        while 1:
+        while True:
             print('钦定第一个和第二个词')
             print('输入列表查看所有词')
             word = input()
@@ -192,11 +193,29 @@ while 1:
                 for i in zishi.keys():
                     print(i)
             else:
-                print(sen(word, input('第二个')))
-                print('')
+                if sum([i.find(word + ' ') == 0 for i in zishi.keys()]) != 0:
+                    while True:
+                        print('输入第二个词语')
+                        print('输入列表查看所有词')
+                        word2 = input()
+                        if word2 == '列表':
+                            for i in zishi.keys():
+                                if i.find(word + ' ') == 0:
+                                    print(i[len(word) + 1:])
+                        else:
+                            senn, fin, d, dt, k, kt = sen(word, word2)
+                            print(senn)
+                            print('----------------------------------------------')
+                            print('本次生成报告：')
+                            print('  生成文章结束原因：' + ('词数限制' if fin == '' else '无词语接龙：' + fin))
+                            print('  词语由双词生成数量：' + str(d) + '/' + str(dt) + '，' + str(d * 100 / dt) + '%')
+                            print('  词语由双词生成中单词生成数量：' + str(k) + '/' + str(kt) + '，' + str(k * 100 / kt) + '%')
+                            print('----------------------------------------------')
+                            print('')
+                            break
                 break
     elif choose == '关闭':
-        exit();
+        exit()
     elif choose == '调试':
         while True:
-            print(ran(input(), random.random()))
+            print(ran(input(), input(), random.random()))
