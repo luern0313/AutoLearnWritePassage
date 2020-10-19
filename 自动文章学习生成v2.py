@@ -205,11 +205,15 @@ while 1:
                         else:
                             senn, fin, d, dt, k, kt = sen(word, word2)
                             print(senn)
+                            with open("result.txt", "wt", encoding='utf-8') as out_file:
+                                out_file.write(str(senn))
                             print('----------------------------------------------')
                             print('本次生成报告：')
                             print('  生成文章结束原因：' + ('词数限制' if fin == '' else '无词语接龙：' + fin))
                             print('  词语由双词生成数量：' + str(d) + '/' + str(dt) + '，' + str(d * 100 / dt) + '%')
                             print('  词语由双词生成中单词生成数量：' + str(k) + '/' + str(kt) + '，' + str(k * 100 / kt) + '%')
+                            print('')
+                            print('文章已储存至 result.txt')
                             print('----------------------------------------------')
                             print('')
                             break
